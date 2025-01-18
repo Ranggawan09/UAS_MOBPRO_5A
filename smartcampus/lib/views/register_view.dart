@@ -17,6 +17,13 @@ class RegisterView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Name Input
+            TextField(
+              controller: authController.nameController,
+              decoration: InputDecoration(labelText: 'Name'),
+            ),
+            SizedBox(height: 16),
+
             // Email Input
             TextField(
               controller: authController.emailController,
@@ -61,7 +68,8 @@ class RegisterView extends StatelessWidget {
                 : ElevatedButton(
               onPressed: () {
                 // Validate inputs
-                if (authController.emailController.text.isEmpty ||
+                if (authController.nameController.text.isEmpty ||
+                    authController.emailController.text.isEmpty ||
                     authController.passwordController.text.isEmpty ||
                     authController.selectedRole.value.isEmpty) {
                   Get.snackbar('Error', 'Please fill all fields');
@@ -70,6 +78,7 @@ class RegisterView extends StatelessWidget {
 
                 // Call register function
                 authController.register(
+                  authController.nameController.text.trim(),
                   authController.emailController.text.trim(),
                   authController.passwordController.text.trim(),
                   authController.selectedRole.value.trim(),
@@ -77,6 +86,22 @@ class RegisterView extends StatelessWidget {
               },
               child: Text('Register'),
             )),
+            SizedBox(height: 20),
+
+            // Resend Verification Email Button
+            Obx(() {
+              if (!authController.isLoading.value) {
+                return ElevatedButton.icon(
+                  onPressed: () {
+                    authController.resendVerificationEmail();
+                  },
+                  icon: Icon(Icons.email),
+                  label: Text('Resend Verification Email'),
+                );
+              } else {
+                return Container(); // Tidak menampilkan tombol jika sedang loading
+              }
+            }),
           ],
         ),
       ),

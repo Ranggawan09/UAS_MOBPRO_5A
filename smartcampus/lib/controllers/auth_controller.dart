@@ -6,8 +6,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthController extends GetxController {
-  // TextEditingController untuk email dan password
+  // TextEditingController untuk email, nama dan password
   final emailController = TextEditingController();
+  final nameController = TextEditingController();
   final passwordController = TextEditingController();
 
   // RxString untuk selectedRole
@@ -41,8 +42,17 @@ class AuthController extends GetxController {
         password: password.trim(),
       );
 
+      User? user = userCredential.user;
+
+      // Cek apakah email sudah diverifikasi
+      if (user != null && !user.emailVerified) {
+        Get.snackbar('Error', 'Please verify your email before logging in.');
+        auth.signOut();
+        return;
+      }
+
       // Ambil data role dari Firestore
-      DocumentSnapshot userDoc = await firestore.collection('users').doc(userCredential.user?.uid).get();
+      DocumentSnapshot userDoc = await firestore.collection('users').doc(user?.uid).get();
 
       if (userDoc.exists && userDoc.data() != null) {
         String role = userDoc.get('role') ?? 'unknown';
@@ -60,6 +70,7 @@ class AuthController extends GetxController {
       isLoading(false);
     }
   }
+
 
   // Fungsi Login dengan Biometric Authentication
   Future<void> loginWithBiometrics() async {
@@ -105,15 +116,16 @@ class AuthController extends GetxController {
   }
 
   // Fungsi Register
-  Future<void> register(String email, String password, String role) async {
+  Future<void> register(String name, String email, String password, String role) async {
     try {
-      if (email.isEmpty || password.isEmpty || role.isEmpty) {
+      if (name.isEmpty || email.isEmpty || password.isEmpty || role.isEmpty) {
         Get.snackbar('Error', 'All fields are required.');
         return;
       }
 
       isLoading(true);
 
+      // Buat akun baru di Firebase Authentication
       UserCredential userCredential = await auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
@@ -121,13 +133,26 @@ class AuthController extends GetxController {
 
       // Simpan data pengguna ke Firestore
       await firestore.collection('users').doc(userCredential.user?.uid).set({
+        'name': name.trim(),
         'email': email.trim(),
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      Get.snackbar('Success', 'Registration successful');
-      Get.offNamed('/login');
+      // Perbarui nama pengguna di Firebase Authentication
+      User? user = userCredential.user;
+      if (user != null) {
+        await user.updateDisplayName(name.trim());
+
+        // Kirim email verifikasi
+        if (!user.emailVerified) {
+          await user.sendEmailVerification();
+          Get.snackbar(
+            'Verification Email Sent',
+            'Please check your email to verify your account before logging in.',
+          );
+        }
+      }
     } on FirebaseAuthException catch (e) {
       _handleFirebaseAuthError(e);
     } catch (e) {
@@ -136,6 +161,24 @@ class AuthController extends GetxController {
       isLoading(false);
     }
   }
+
+
+  // Kirim ulang email verifikasi
+  Future<void> resendVerificationEmail() async {
+    try {
+      User? user = auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        Get.snackbar('Verification Email Sent', 'A new verification email has been sent to your email address.');
+      } else {
+        Get.snackbar('Error', 'User not found or email is already verified.');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to send verification email: $e');
+    }
+  }
+
+
 
   // Fungsi untuk Menangani Error FirebaseAuth
   void _handleFirebaseAuthError(FirebaseAuthException e) {

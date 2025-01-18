@@ -51,13 +51,19 @@ class LoginView extends StatelessWidget {
             SizedBox(height: 16),
 
             // Tombol Login dengan Biometrik
-            ElevatedButton.icon(
-              onPressed: () {
-                authController.loginWithBiometrics();
-              },
-              icon: Icon(Icons.fingerprint),
-              label: Text('Login with Biometrics'),
-            ),
+            Obx(() {
+              if (authController.isBiometricEnabled.value) {
+                return ElevatedButton.icon(
+                  onPressed: () {
+                    authController.loginWithBiometrics();
+                  },
+                  icon: Icon(Icons.fingerprint),
+                  label: Text('Login with Biometrics'),
+                );
+              } else {
+                return Container(); // Tidak menampilkan tombol jika biometrik tidak aktif
+              }
+            }),
             SizedBox(height: 16),
 
             // Navigasi ke halaman Register
