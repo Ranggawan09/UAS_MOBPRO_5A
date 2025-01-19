@@ -1,0 +1,2 @@
+C:/Users/Administrator/StudioProjects/UAS_MOBPRO_5A/smartcampus/android/app/.cxx/Debug/1xub3710/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Administrator/StudioProjects/UAS_MOBPRO_5A/smartcampus/android/app/.cxx/Debug/1xub3710/x86_64/CMakeFiles/rebuild_cache.dir
